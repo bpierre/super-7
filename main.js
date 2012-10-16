@@ -352,11 +352,6 @@
           }
           
           player.lastPop = now;
-          
-          canv.classList.add('active');
-          window.setTimeout(function(){
-            canv.classList.remove('active');
-          }, 50);
         }
         
         // Move bullets
