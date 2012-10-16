@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>SUPER #7</title>
+	<style>
+		html { display: table; width: 100%; height: 100%; color: #fff; background: #000; }
+		body { display: table-cell; vertical-align:middle; text-align:center; margin: 0; }
+		a { color: #444; }
+		canvas { margin: 0; }
+		canvas { border: 1px solid #000; }
+		canvas.active { border-color: #222; }
+		h1 { margin: 0 0 10px; font:24px sans-serif; }
+		.credits { color: #444; font: 11px sans-serif; margin: 10px 0 0; text-transform: lowercase; }
+		button { cursor: pointer; }
+	</style>
+</head>
+<body>
+	<h1>SUPER #7<span id="lvl"></span></h1>
+	<canvas id="c"></canvas>
+	<p class="credits">
+		sfx <a href="http://carolinelollo.fr/">Caroline Lollo</a>,
+		gfx <a href="http://raphaelbastide.com/">Raphael Bastide</a>,
+		dev <a href="http://pierrebertet.net/">Pierre Bertet</a>.
+		<button type="button" onclick="muteClick(this)">mute sound</button>
+	</p>
+	<script src="keyboard.js"></script>
+	<script src="raf.js"></script>
+	<script src="main.js"></script>
+	<script>
+	function muteClick(button) {
+		button.innerHTML = (toggleMute()? 'un' : '') + 'mute sound';
+	}
+	</script>
+</body>
+</html>
