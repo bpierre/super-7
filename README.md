@@ -1,17 +1,15 @@
 # SUPER #7
 
-A SUPER #GAME.
+SUPER #7 IS A SUPER #GAME.
 
-## Installation
+## Instructions
 
-Launch **index.html** with your browser.
+Launch **index.html** in your browser.
 
 ## Credits
 
-SFX: [Caroline Lollo](http://carolinelollo.fr/)
-GFX: [Raphael Bastide](http://example.com/)
-DEV: [Pierre Bertet](http://pierrebertet.net/)
+SFX [Caroline Lollo](http://carolinelollo.fr/), GFX [Raphael Bastide](http://example.com/), DEV [Pierre Bertet](http://pierrebertet.net/).
 
 ## License
 
-MIT
+[MIT](http://pierre.mit-license.org/)
