@@ -382,7 +382,7 @@
     }
   };
   
-  var nextLevel = 9;
+  var nextLevel = 0;
   var startGame = function(gameover, win) {
     
     setLevel(nextLevel);
