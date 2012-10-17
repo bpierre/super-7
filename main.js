@@ -1,4 +1,4 @@
-(function(window, document, KeyboardJS){
+(function(window, document, KeyboardJS, SUPER7){
   'use strict';
 
   var levelElt = document.getElementById('lvl'),
@@ -19,26 +19,12 @@
         'PRESS [SPACE]'
       ],
       PLAYER_SPEED = 4,
-      LEVELS = [
-        // Bullet min speed, Bullet max speed, Bullet rate,
-        // Monster min speed, Monster max speed, Monster rate, Boss speed
-        [3, 3, 200, 1, 3, 1000, 1],
-        [3, 3, 200, 2, 3, 800,  1],
-        [3, 3, 300, 2, 3, 600,  1],
-        [3, 3, 300, 2, 4, 500,  1],
-        [3, 3, 400, 2, 4, 400,  2],
-        [3, 3, 500, 3, 5, 300,  2],
-        [3, 3, 600, 3, 5, 200,  2],
-        [3, 3, 700, 3, 5, 100,  2],
-        [3, 3, 800, 3, 5, 100,  2],
-        [3, 3, 900, 3, 5, 80,   2]
-      ],
+      LEVELS = SUPER7.levels,
       PLAYER_SIZE = 11,
       BULLET_SIZE = 5,
       BOSS_SIZE = 11,
       MONSTER_SIZE = 5,
       ENABLE_TRAILS = true,
-      IMAGES = ['boss', 'player', 'bullet', 'monster'],
       SOUNDS = ['bullet', 'monster', 'death', 'level', 'win'],
       level = {},
       pressedKeys = { left: false, right: false, up: false, down: false },
@@ -90,20 +76,14 @@
     level.MONSTER_MAX_SPEED = LEVELS[levelNum][4];
     level.MONSTER_RATE      = LEVELS[levelNum][5];
     level.BOSS_SPEED        = LEVELS[levelNum][6];
+    
+    // Boss color
+    Boss.shape[0].color = LEVELS[levelNum][7][0];
+    Boss.shape[1].color = LEVELS[levelNum][7][1];
+    Boss.shape[1].symColors = [LEVELS[levelNum][7][2], LEVELS[levelNum][7][3], LEVELS[levelNum][7][4]];
+    
     return true;
   };
-  
-  /* Load and return an Image */
-  var getImage = (function(){
-    var loadedImages = {};
-    for (var i=0; i < IMAGES.length; i++) {
-      loadedImages[IMAGES[i]] = document.createElement('img');
-      loadedImages[IMAGES[i]].src = BASE_URL + 'img/' + IMAGES[i] + '.png';
-    }
-    return function(name){
-      return loadedImages[name];
-    };
-  })();
   
   /* Load and return a Sound */
   var playSound = (function(){
@@ -205,7 +185,7 @@
     }
     return true;
   };
-  Entity.prototype.draw = function(hueMod, alpha, x, y) {
+  Entity.prototype.draw = function(alpha, x, y) {
     if (!this.shape) return;
     var shapeGroupsLen = this.shape.length,
         shapeGroup = null,
@@ -215,12 +195,11 @@
     
     if (x === undefined) { x = this.x; }
     if (y === undefined) { y = this.y; }
-    if (hueMod === undefined) { hueMod = 0; }
     if (alpha === undefined) { alpha = 1; }
     
     for (var i=0; i < shapeGroupsLen; i++) {
       shapeGroup = this.shape[i];
-      ctx.fillStyle = getHsla(shapeGroup.color[0] + hueMod, shapeGroup.color[1], shapeGroup.color[2], alpha);
+      ctx.fillStyle = getHsla(shapeGroup.color[0], shapeGroup.color[1], shapeGroup.color[2], alpha);
       for (var j = shapeGroup.rects.length - 1; j >= 0; j--) {
         rect = shapeGroup.rects[j];
         ctx.fillRect(rect[0] + x, rect[1] + y, rect[2], rect[3]);
@@ -233,11 +212,11 @@
           ];
           for (var k = symPoints.length - 1; k >= 0; k--) {
             if (symColors) {
-              ctx.fillStyle = getHsla(symColors[k][0] + hueMod, symColors[k][1], symColors[k][2], alpha);
+              ctx.fillStyle = getHsla(symColors[k][0], symColors[k][1], symColors[k][2], alpha);
             }
             ctx.fillRect(symPoints[k][0], symPoints[k][1], symPoints[k][2], symPoints[k][3]);
           }
-          ctx.fillStyle = getHsla(shapeGroup.color[0] + hueMod, shapeGroup.color[1], shapeGroup.color[2], alpha);
+          ctx.fillStyle = getHsla(shapeGroup.color[0], shapeGroup.color[1], shapeGroup.color[2], alpha);
         }
       }
     }
@@ -251,11 +230,16 @@
     this.shape = shape;
   };
   inherits(Bullet, Entity);
-  Bullet.prototype.draw = function(hueMod, alpha) {
-    Entity.prototype.draw.call(this, hueMod, alpha);
+  Bullet.prototype.draw = function(alpha) {
+    var x1, y1, x2, y2;
+    Entity.prototype.draw.call(this, alpha);
     if (ENABLE_TRAILS) {
-      Entity.prototype.draw.call(this, 0, 0.21, this.x - (this.xSpeed * 2), this.y - (this.ySpeed * 2));
-      Entity.prototype.draw.call(this, 0, 0.06, this.x - (this.xSpeed * 5), this.y - (this.ySpeed * 5));
+      x1 = this.x - (this.xSpeed * 2);
+      y1 = this.y - (this.ySpeed * 2);
+      x2 = this.x - (this.xSpeed * 5);
+      y2 = this.y - (this.ySpeed * 5);
+      Entity.prototype.draw.call(this, 0.21, x1, y1);
+      Entity.prototype.draw.call(this, 0.06, x2, y2);
     }
   };
   Bullet.shapeGrey = [
@@ -365,8 +349,7 @@
   Boss.prototype.popBullet = function(){
     var xSpeed = getRandomInt(-level.MONSTER_MAX_SPEED, level.MONSTER_MAX_SPEED, [level.BOSS_SPEED]),
         ySpeed = getRandomInt(-level.MONSTER_MAX_SPEED, level.MONSTER_MAX_SPEED, [level.BOSS_SPEED]),
-        pos = [this.x + Math.round(this.width / 2 - MONSTER_SIZE/2), this.y + Math.round(this.height/2 - MONSTER_SIZE/2)],
-        monster = null;
+        pos = [this.x + Math.round(this.width / 2 - MONSTER_SIZE/2), this.y + Math.round(this.height/2 - MONSTER_SIZE/2)];
     
     // Force movement
     if (!xSpeed && !ySpeed) {
@@ -399,7 +382,7 @@
     }
   };
   
-  var nextLevel = 0;
+  var nextLevel = 9;
   var startGame = function(gameover, win) {
     
     setLevel(nextLevel);
@@ -579,9 +562,9 @@
         }
       },
       stop: function(){
-        game.draw(true);
-        window.clearTimeout(loopTimer);
         window.cancelAnimationFrame(reqAnimId);
+        window.clearTimeout(loopTimer);
+        game.draw(true);
         lastRenderTime = 0;
       }
     };
@@ -604,7 +587,7 @@
           game = null;
           playSound('death');
           nextLevel = 0;
-          initOverlay(['YOU LOSE AT LEVEL ' + (level.num + 1) + '.', 'HE WINS.', 'HA HA HA.'], 80);
+          initOverlay(['YOU LOSE AT LEVEL ' + (level.num + 1) + '.', 'HE WINS.', 'HA HA.'], 80);
         },
         // Win
         function(){
@@ -631,4 +614,4 @@
     return (MUTE_SOUND = !MUTE_SOUND);
   };
   
-})(window, document, KeyboardJS);
+})(window, document, KeyboardJS, SUPER7);
