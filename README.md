@@ -8,7 +8,7 @@ Launch **index.html** in your browser.
 
 ## Credits
 
-SFX [Caroline Lollo](http://carolinelollo.fr/), GFX [Raphael Bastide](http://example.com/), DEV [Pierre Bertet](http://pierrebertet.net/).
+SFX [Caroline Lollo](http://carolinelollo.fr/), GFX [Raphaël Bastide](http://raphaelbastide.com/), DEV [Pierre Bertet](http://pierrebertet.net/).
 
 ## License
 
