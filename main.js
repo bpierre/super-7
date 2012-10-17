@@ -19,29 +19,25 @@
         'PRESS [SPACE]'
       ],
       PLAYER_SPEED = 4,
-      BULLET_MIN_SPEED = 3,
-      BULLET_MAX_SPEED = 3,
-      BULLET_RATE = 200,
-      MONSTER_MIN_SPEED = 1,
-      MONSTER_MAX_SPEED = 3,
-      MONSTER_RATE = 1000,
-      BOSS_SPEED = 1,
       LEVELS = [
-        [BULLET_MIN_SPEED, BULLET_MAX_SPEED, BULLET_RATE, MONSTER_MIN_SPEED, MONSTER_MAX_SPEED, MONSTER_RATE, BOSS_SPEED],
-        [3,                3,                200,         2,                 3,                 800,          1],
-        [3,                3,                300,         2,                 3,                 600,          1],
-        [3,                3,                300,         2,                 4,                 500,          1],
-        [3,                3,                400,         2,                 4,                 400,          2],
-        [3,                3,                500,         3,                 5,                 300,          2],
-        [3,                3,                600,         3,                 5,                 200,          2],
-        [3,                3,                700,         3,                 5,                 100,          2],
-        [3,                3,                800,         3,                 5,                 100,          2],
-        [3,                3,                900,         3,                 5,                 80,           2]
+        // Bullet min speed, Bullet max speed, Bullet rate,
+        // Monster min speed, Monster max speed, Monster rate, Boss speed
+        [3, 3, 200, 1, 3, 1000, 1],
+        [3, 3, 200, 2, 3, 800,  1],
+        [3, 3, 300, 2, 3, 600,  1],
+        [3, 3, 300, 2, 4, 500,  1],
+        [3, 3, 400, 2, 4, 400,  2],
+        [3, 3, 500, 3, 5, 300,  2],
+        [3, 3, 600, 3, 5, 200,  2],
+        [3, 3, 700, 3, 5, 100,  2],
+        [3, 3, 800, 3, 5, 100,  2],
+        [3, 3, 900, 3, 5, 80,   2]
       ],
       PLAYER_SIZE = 11,
       BULLET_SIZE = 5,
       BOSS_SIZE = 11,
       MONSTER_SIZE = 5,
+      ENABLE_TRAILS = true,
       IMAGES = ['boss', 'player', 'bullet', 'monster'],
       SOUNDS = ['bullet', 'monster', 'death', 'level', 'win'],
       level = {},
@@ -68,6 +64,10 @@
     F.prototype = Base.prototype;
     Sub.prototype = new F();
     Sub.prototype.constructor = Sub;
+  };
+  var getHsla = function(h, s, l, a) {
+    if (a === undefined) { a = 1; }
+    return 'hsla('+ h +', '+ s +'%, '+ l +'%, '+ a +')';
   };
   
   /* Keyboard events */
@@ -150,6 +150,7 @@
     this.setHeight(height);
     if (x) { this.setX(x || 0); }
     if (y) { this.setY(y || 0); }
+    this.shape = this.constructor.shape;
   };
   Entity.prototype.setWidth = function(width) {
     this.width = width || 10;
@@ -204,18 +205,80 @@
     }
     return true;
   };
+  Entity.prototype.draw = function(hueMod, alpha, x, y) {
+    if (!this.shape) return;
+    var shapeGroupsLen = this.shape.length,
+        shapeGroup = null,
+        rect = null,
+        symColors = null,
+        symPoints = null;
+    
+    if (x === undefined) { x = this.x; }
+    if (y === undefined) { y = this.y; }
+    if (hueMod === undefined) { hueMod = 0; }
+    if (alpha === undefined) { alpha = 1; }
+    
+    for (var i=0; i < shapeGroupsLen; i++) {
+      shapeGroup = this.shape[i];
+      ctx.fillStyle = getHsla(shapeGroup.color[0] + hueMod, shapeGroup.color[1], shapeGroup.color[2], alpha);
+      for (var j = shapeGroup.rects.length - 1; j >= 0; j--) {
+        rect = shapeGroup.rects[j];
+        ctx.fillRect(rect[0] + x, rect[1] + y, rect[2], rect[3]);
+        if (shapeGroup.symmetric) {
+          symColors = shapeGroup.symColors;
+          symPoints = [
+            [x + (this.width - rect[0] - rect[2]), rect[1] + y, rect[2], rect[3]],
+            [x + (this.width - rect[0] - rect[2]), y + (this.height - rect[1] - rect[3]), rect[2], rect[3]],
+            [rect[0] + x, y + (this.height - rect[1] - rect[3]), rect[2], rect[3]]
+          ];
+          for (var k = symPoints.length - 1; k >= 0; k--) {
+            if (symColors) {
+              ctx.fillStyle = getHsla(symColors[k][0] + hueMod, symColors[k][1], symColors[k][2], alpha);
+            }
+            ctx.fillRect(symPoints[k][0], symPoints[k][1], symPoints[k][2], symPoints[k][3]);
+          }
+          ctx.fillStyle = getHsla(shapeGroup.color[0] + hueMod, shapeGroup.color[1], shapeGroup.color[2], alpha);
+        }
+      }
+    }
+  };
   
   /* Bullet */
-  var Bullet = function(x, y, xSpeed, ySpeed){
+  var Bullet = function(x, y, xSpeed, ySpeed, shape) {
     Entity.call(this, x, y, BULLET_SIZE, BULLET_SIZE, true);
     this.xSpeed = xSpeed || 0;
     this.ySpeed = ySpeed || 0;
+    this.shape = shape;
   };
   inherits(Bullet, Entity);
-  Bullet.prototype.draw = function(){
-    ctx.drawImage(getImage('bullet'), this.x, this.y, this.width, this.height);
+  Bullet.prototype.draw = function(hueMod, alpha) {
+    Entity.prototype.draw.call(this, hueMod, alpha);
+    if (ENABLE_TRAILS) {
+      Entity.prototype.draw.call(this, 0, 0.21, this.x - (this.xSpeed * 2), this.y - (this.ySpeed * 2));
+      Entity.prototype.draw.call(this, 0, 0.06, this.x - (this.xSpeed * 5), this.y - (this.ySpeed * 5));
+    }
   };
-  
+  Bullet.shapeGrey = [
+    {
+      color: [0, 0, 78],
+      symmetric: false,
+      rects: [
+        [1, 0, 3, 5],
+        [0, 1, 5, 3]
+      ]
+    }
+  ];
+  Bullet.shapeGreen = [
+    {
+      color: [116, 65, 52],
+      symmetric: false,
+      rects: [
+        [1, 0, 3, 5],
+        [0, 1, 5, 3]
+      ]
+    }
+  ];
+
   /* Player */
   var Player = function(x, y){
     Entity.call(this, x, y, PLAYER_SIZE, PLAYER_SIZE, false);
@@ -224,9 +287,26 @@
     this.lastPop = null;
   };
   inherits(Player, Entity);
-  Player.prototype.draw = function(){
-    ctx.drawImage(getImage('player'), this.x, this.y, this.width, this.height);
-  };
+  Player.shape = [
+    {
+      color: [88, 100, 50],
+      symmetric: false,
+      rects: [
+        [5, 0, 1, 11],
+        [0, 5, 11, 1]
+      ]
+    },
+    {
+      color: [88, 100, 50],
+      symmetric: true,
+      rects: [
+        [1, 1, 1, 1],
+        [2, 2, 1, 1],
+        [3, 3, 1, 1],
+        [4, 4, 1, 1]
+      ]
+    }
+  ];
   Player.prototype.popBullet = function(xSpeed, ySpeed) {
     var bulletX, bulletY;
     if (xSpeed > 0) {
@@ -243,7 +323,7 @@
     } else {
       bulletY = this.y + Math.round(this.height / 2 - BULLET_SIZE / 2);
     }
-    this.bullets.push(new Bullet(bulletX, bulletY, xSpeed, ySpeed));
+    this.bullets.push(new Bullet(bulletX, bulletY, xSpeed, ySpeed, Bullet.shapeGreen));
     playSound('bullet');
   };
   
@@ -256,15 +336,38 @@
     this.target = { x: x, y: y };
   };
   inherits(Boss, Entity);
-  Boss.prototype.draw = function(){
-    ctx.drawImage(getImage('boss'), this.x, this.y, this.width, this.height);
-  };
+  Boss.shape = [
+    {
+      color: [240, 0, 52],
+      symmetric: false,
+      rects: [
+        [5, 0, 1, 11],
+        [0, 5, 11, 1]
+      ]
+    },
+    {
+      color: [51, 8, 52],
+      symmetric: true,
+      symColors: [
+        [51, 17, 51],
+        [200, 1, 47],
+        [240, 0, 42]
+      ],
+      rects: [
+        [0, 4, 1, 1],
+        [1, 3, 1, 2],
+        [2, 2, 1, 3],
+        [3, 1, 1, 4],
+        [4, 0, 1, 5]
+      ]
+    }
+  ];
   Boss.prototype.popBullet = function(){
     var xSpeed = getRandomInt(-level.MONSTER_MAX_SPEED, level.MONSTER_MAX_SPEED, [level.BOSS_SPEED]),
         ySpeed = getRandomInt(-level.MONSTER_MAX_SPEED, level.MONSTER_MAX_SPEED, [level.BOSS_SPEED]),
         pos = [this.x + Math.round(this.width / 2 - MONSTER_SIZE/2), this.y + Math.round(this.height/2 - MONSTER_SIZE/2)],
         monster = null;
-        
+    
     // Force movement
     if (!xSpeed && !ySpeed) {
       if (getRandomInt(0, 1)) {
@@ -273,7 +376,7 @@
         ySpeed = getRandomInt(-level.MONSTER_MAX_SPEED, level.MONSTER_MAX_SPEED, [0, level.BOSS_SPEED]);
       }
     }
-        
+    
     if (xSpeed > 0) {
       pos[0] = this.x + this.width + MONSTER_SIZE;
     } else if (xSpeed < 0) {
@@ -284,12 +387,8 @@
     } else if (ySpeed < 0) {
       pos[1] = this.y - MONSTER_SIZE;
     }
-        
-    monster = new Bullet(pos[0], pos[1], xSpeed, ySpeed);
-    monster.draw = function() {
-      ctx.drawImage(getImage('monster'), monster.x, monster.y, monster.width, monster.height);
-    };
-    this.bullets.push(monster);
+    
+    this.bullets.push(new Bullet(pos[0], pos[1], xSpeed, ySpeed, Bullet.shapeGrey));
     playSound('monster');
   };
   Boss.getInitialPosition = function(){
@@ -501,9 +600,9 @@
       game = startGame(
         // Game over
         function(){
-          playSound('death');
           game.stop();
           game = null;
+          playSound('death');
           nextLevel = 0;
           initOverlay(['YOU LOSE AT LEVEL ' + (level.num + 1) + '.', 'HE WINS.', 'HA HA HA.'], 80);
         },
